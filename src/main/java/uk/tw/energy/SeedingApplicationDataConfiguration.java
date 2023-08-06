@@ -6,8 +6,8 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Primary;
 import org.springframework.http.converter.json.Jackson2ObjectMapperBuilder;
-import uk.tw.energy.domain.ElectricityReading;
-import uk.tw.energy.domain.PricePlan;
+import uk.tw.energy.domain.Account;
+import uk.tw.energy.domain.EnergySupplier;
 import uk.tw.energy.generator.ElectricityReadingsGenerator;
 
 import java.math.BigDecimal;
@@ -26,33 +26,35 @@ public class SeedingApplicationDataConfiguration {
     private static final String STANDARD_PRICE_PLAN_ID = "price-plan-2";
 
     @Bean
-    public List<PricePlan> pricePlans() {
-        final List<PricePlan> pricePlans = new ArrayList<>();
-        pricePlans.add(new PricePlan(MOST_EVIL_PRICE_PLAN_ID, "Dr Evil's Dark Energy", BigDecimal.TEN, emptyList()));
-        pricePlans.add(new PricePlan(RENEWABLES_PRICE_PLAN_ID, "The Green Eco", BigDecimal.valueOf(2), emptyList()));
-        pricePlans.add(new PricePlan(STANDARD_PRICE_PLAN_ID, "Power for Everyone", BigDecimal.ONE, emptyList()));
-        return pricePlans;
-    }
-
-    @Bean
-    public Map<String, List<ElectricityReading>> perMeterElectricityReadings() {
-        final Map<String, List<ElectricityReading>> readings = new HashMap<>();
+    public Map<String, Account> accountMap() {
+        final Map<String, Account> map = new HashMap<>();
         final ElectricityReadingsGenerator electricityReadingsGenerator = new ElectricityReadingsGenerator();
-        smartMeterToPricePlanAccounts()
-                .keySet()
-                .forEach(smartMeterId -> readings.put(smartMeterId, electricityReadingsGenerator.generate(20)));
-        return readings;
+
+        map.put("smart-meter-0", new Account("smart-meter-0", new EnergySupplier(
+                "Dr Evil's Dark Energy", MOST_EVIL_PRICE_PLAN_ID, BigDecimal.TEN, emptyList())));
+        map.put("smart-meter-1", new Account("smart-meter-1", new EnergySupplier(
+                "The Green Eco", RENEWABLES_PRICE_PLAN_ID, BigDecimal.TEN, emptyList())));
+        map.put("smart-meter-2", new Account("smart-meter-2", new EnergySupplier(
+                "Dr Evil's Dark Energy", MOST_EVIL_PRICE_PLAN_ID, BigDecimal.TEN, emptyList())));
+        map.put("smart-meter-3", new Account("smart-meter-3", new EnergySupplier(
+                "Power for Everyone", STANDARD_PRICE_PLAN_ID, BigDecimal.TEN, emptyList())));
+        map.put("smart-meter-4", new Account("smart-meter-4", new EnergySupplier(
+                "The Green Eco", RENEWABLES_PRICE_PLAN_ID, BigDecimal.TEN, emptyList())));
+
+        map.keySet().forEach(smartMeterId -> map.get(smartMeterId).addElectricityReadings(
+                electricityReadingsGenerator.generate(20)
+        ));
+
+        return map;
     }
 
     @Bean
-    public Map<String, String> smartMeterToPricePlanAccounts() {
-        final Map<String, String> smartMeterToPricePlanAccounts = new HashMap<>();
-        smartMeterToPricePlanAccounts.put("smart-meter-0", MOST_EVIL_PRICE_PLAN_ID);
-        smartMeterToPricePlanAccounts.put("smart-meter-1", RENEWABLES_PRICE_PLAN_ID);
-        smartMeterToPricePlanAccounts.put("smart-meter-2", MOST_EVIL_PRICE_PLAN_ID);
-        smartMeterToPricePlanAccounts.put("smart-meter-3", STANDARD_PRICE_PLAN_ID);
-        smartMeterToPricePlanAccounts.put("smart-meter-4", RENEWABLES_PRICE_PLAN_ID);
-        return smartMeterToPricePlanAccounts;
+    public List<EnergySupplier> pricePlans() {
+        final List<EnergySupplier> energySuppliers = new ArrayList<>();
+        energySuppliers.add(new EnergySupplier("Dr Evil's Dark Energy", MOST_EVIL_PRICE_PLAN_ID, BigDecimal.TEN, emptyList()));
+        energySuppliers.add(new EnergySupplier("The Green Eco", RENEWABLES_PRICE_PLAN_ID, BigDecimal.valueOf(2), emptyList()));
+        energySuppliers.add(new EnergySupplier("Power for Everyone", STANDARD_PRICE_PLAN_ID, BigDecimal.ONE, emptyList()));
+        return energySuppliers;
     }
 
     @Bean

@@ -300,3 +300,34 @@ Example output
   }
 ]
 ```
+
+### Last Week usage Cost - Assignment task
+
+Endpoint
+
+```text
+GET /accounts/cost/<smartMeterId>[?range=<range>]
+```
+
+Parameters
+
+| Parameter      | Description                                                  |
+| -------------- |--------------------------------------------------------------|
+| `smartMeterId` | One of the smart meters' id listed above                     |
+| `limit`        | (Optional) range of time period eg:1w - Currently not useful |
+
+Retrieving readings using CURL
+
+```console
+$ curl "http://localhost:8080/accounts/cost/smart-meter-0?range=1w"
+```
+
+Example output
+
+```json
+{
+  "cost": 0.1070,
+  "smartMeterId": "smart-meter-0",
+  "timeRange": "1w"
+}
+```

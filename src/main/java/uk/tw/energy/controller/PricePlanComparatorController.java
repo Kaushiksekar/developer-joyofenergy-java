@@ -6,12 +6,12 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
+import uk.tw.energy.domain.Account;
 import uk.tw.energy.service.AccountService;
 import uk.tw.energy.service.PricePlanService;
 
 import java.math.BigDecimal;
 import java.util.ArrayList;
-import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -33,11 +33,20 @@ public class PricePlanComparatorController {
 
     @GetMapping("/compare-all/{smartMeterId}")
     public ResponseEntity<Map<String, Object>> calculatedCostForEachPricePlan(@PathVariable String smartMeterId) {
-        String pricePlanId = accountService.getPricePlanIdForSmartMeterId(smartMeterId);
+        Optional<Account> accountOptional = accountService.getAccountForSmartMeterId(smartMeterId);
+        if (accountOptional.isEmpty() || accountOptional.get().getEnergySupplier() == null) {
+            return ResponseEntity.notFound().build();
+        }
+
+        String pricePlanId = accountOptional
+                .get()
+                .getEnergySupplier()
+                .planName();
+
         Optional<Map<String, BigDecimal>> consumptionsForPricePlans =
                 pricePlanService.getConsumptionCostOfElectricityReadingsForEachPricePlan(smartMeterId);
 
-        if (!consumptionsForPricePlans.isPresent()) {
+        if (consumptionsForPricePlans.isEmpty()) {
             return ResponseEntity.notFound().build();
         }
 
@@ -45,9 +54,7 @@ public class PricePlanComparatorController {
         pricePlanComparisons.put(PRICE_PLAN_ID_KEY, pricePlanId);
         pricePlanComparisons.put(PRICE_PLAN_COMPARISONS_KEY, consumptionsForPricePlans.get());
 
-        return consumptionsForPricePlans.isPresent()
-                ? ResponseEntity.ok(pricePlanComparisons)
-                : ResponseEntity.notFound().build();
+        return ResponseEntity.ok(pricePlanComparisons);
     }
 
     @GetMapping("/recommend/{smartMeterId}")
@@ -56,12 +63,12 @@ public class PricePlanComparatorController {
         Optional<Map<String, BigDecimal>> consumptionsForPricePlans =
                 pricePlanService.getConsumptionCostOfElectricityReadingsForEachPricePlan(smartMeterId);
 
-        if (!consumptionsForPricePlans.isPresent()) {
+        if (consumptionsForPricePlans.isEmpty()) {
             return ResponseEntity.notFound().build();
         }
 
         List<Map.Entry<String, BigDecimal>> recommendations = new ArrayList<>(consumptionsForPricePlans.get().entrySet());
-        recommendations.sort(Comparator.comparing(Map.Entry::getValue));
+        recommendations.sort(Map.Entry.comparingByValue());
 
         if (limit != null && limit < recommendations.size()) {
             recommendations = recommendations.subList(0, limit);
